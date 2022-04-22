@@ -39,16 +39,18 @@ def commit_close(func):
     return decorator
 
 
-@commit_close
-def db_insert(name, phone, email):
+def db_insert_to_users(name, phone, email):
     return f"""
     INSERT INTO users(name, phone, email)
         VALUES('{name}', '{phone}', '{email}')
     """
 
 
-db_insert("Pedro", "999999999", "pedro@gmail.com")
-db_insert("Lauro", "999999998", "lauro@gmail.com")
+def db_insert_to_addresses(house_no, street, city, postal_code, country):
+    return f"""
+    INSERT INTO addresses(house_no, street, city, postal_code, country)
+        VALUES('{house_no}', '{street}', '{city}', '{postal_code}', '{country}')
+    """
 
 
 @commit_close

@@ -19,27 +19,24 @@ def commit_close(func):
     def decorator(*args):
         con = sqlite3.connect('base.db')
         cur = con.cursor()
-        try:
-            table = """
-                CREATE TABLE users (
-                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                phone TEXT NOT NULL,
-                email TEXT UNIQUE NOT NULL
-                )
-            """
-            cur.execute(table)
-        except:
-            pass
+        table = """
+            CREATE TABLE IF NOT EXISTS users (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL
+            )
+        """
+        cur.execute(table)
         sql = func(*args)
         cur.execute(sql)
         con.commit()
         con.close()
-
     return decorator
 
 
-def db_insert_to_users(name, phone, email):
+@commit_close
+def db_insert_to_users(cursor, name, phone, email):
     return f"""
     INSERT INTO users(name, phone, email)
         VALUES('{name}', '{phone}', '{email}')

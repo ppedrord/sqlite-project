@@ -187,7 +187,7 @@ def select_all_projects_and_tasks_related(conn):
     """
         Find a project and its tasks by the project id
     :param conn: sqlite3.Connection
-    :return: The projects that have tasks
+    :return: The projects and tasks organized
     """
     sql = """
     SELECT project_name,
@@ -222,6 +222,57 @@ def select_all_projects_and_tasks_related(conn):
     cur.execute(sql)
     data = cur.fetchall()
     return data
+
+
+def delete_projects_that_do_not_have_tasks(conn):
+    """
+        Delete a project that don't have a task
+    :param conn: sqlite3.Connection
+    :return: 0 if the operation was completed correctly and 1 if it wasn't
+    """
+    cur = conn.cursor()
+    sql_0 = """
+        SELECT count(*)
+        FROM projects
+    """
+    find_rows_before_tuple = cur.execute(sql_0)
+    for i in find_rows_before_tuple:
+        find_rows_before = i[0]
+    sql_1 = """
+        SELECT 
+               project_name,
+               project_begin_date,
+               project_end_date,
+               task_id,
+               task_name,
+               priority,
+               status_id,
+               begin_date,
+               end_date
+
+        FROM projects
+        LEFT JOIN tasks ON tasks.project_id = projects.project_id
+        WHERE tasks.project_id IS NULL"""
+    cur.execute(sql_1)
+    data = cur.fetchone()
+    print(data)
+    sql_2 = f"""
+        DELETE FROM projects
+        WHERE project_name LIKE '%{data[0]}%' 
+    """
+    cur.execute(sql_2)
+    sql_3 = """
+            SELECT count(*)
+            FROM projects
+        """
+    find_rows_after_tuple = cur.execute(sql_3)
+    for i in find_rows_after_tuple:
+        find_rows_after = i[0]
+
+    if find_rows_before > find_rows_after:
+        print(find_rows_before, find_rows_after)
+
+    return find_rows_before - find_rows_after
 
 
 def main():
@@ -271,7 +322,10 @@ def main():
 
         # select project and its tasks by the id of the project
         all_projects_and_tasks = select_all_projects_and_tasks_related(conn)
-        print("all_projects_and_tasks:", all_projects_and_tasks)
+        print("all_projects_and_tasks:", all_projects_and_tasks, "\n")
+
+        # delete the project that don't have tasks related
+        project_deleted = delete_projects_that_do_not_have_tasks(conn)
 
     conn.close()
 

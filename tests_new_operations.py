@@ -46,7 +46,6 @@ def create_connection():
         print(e)
 
     yield conn
-    # breakpoint()
     tables = get_tables(conn)
     delete_tables(conn, tables)
 
@@ -143,3 +142,8 @@ all_tasks_and_projects = [
 
 def test_select_all_projects_and_tasks_related(create_connection, populate_projects_and_tasks):
     assert new_operations.select_all_projects_and_tasks_related(create_connection) == all_tasks_and_projects
+
+
+def test_delete_projects_that_do_not_have_tasks(create_connection, populate_projects_and_tasks):
+    assert new_operations.delete_projects_that_do_not_have_tasks(create_connection) == 1
+

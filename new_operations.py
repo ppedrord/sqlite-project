@@ -183,6 +183,47 @@ def select_projects_that_have_tasks(conn):
     return data
 
 
+def select_all_projects_and_tasks_related(conn):
+    """
+        Find a project and its tasks by the project id
+    :param conn: sqlite3.Connection
+    :return: The projects that have tasks
+    """
+    sql = """
+    SELECT project_name,
+           project_begin_date,
+           project_end_date,
+           task_id,
+           task_name,
+           priority,
+           status_id,
+           begin_date,
+           end_date
+           
+    FROM projects
+    LEFT JOIN tasks USING(project_id)
+    UNION ALL 
+    
+    SELECT project_name,
+           project_begin_date,
+           project_end_date,
+           task_id,
+           task_name,
+           priority,
+           status_id,
+           begin_date,
+           end_date
+           
+    FROM tasks
+    LEFT JOIN projects USING(project_id)
+    WHERE tasks.project_id IS NULL
+    """
+    cur = conn.cursor()
+    cur.execute(sql)
+    data = cur.fetchall()
+    return data
+
+
 def main():
     database = r"C:\Users\Pedro Paulo\sqlite-project\base.db"
 
@@ -226,7 +267,11 @@ def main():
 
         # select project and its tasks by the id of the project
         projects_with_tasks_01 = select_projects_that_have_tasks(conn)
-        print("projects_with_tasks_01:", projects_with_tasks_01)
+        print("projects_with_tasks_01:", projects_with_tasks_01, "\n")
+
+        # select project and its tasks by the id of the project
+        all_projects_and_tasks = select_all_projects_and_tasks_related(conn)
+        print("all_projects_and_tasks:", all_projects_and_tasks)
 
     conn.close()
 

@@ -128,3 +128,18 @@ projects_with_tasks_01 = [
 
 def test_projects_that_have_tasks(create_connection, populate_projects_and_tasks):
     assert new_operations.select_projects_that_have_tasks(create_connection) == projects_with_tasks_01
+
+
+all_tasks_and_projects = [
+    ('MongoDB and Fixtures', '2022-02-07', '2022-02-17', 1, 'Perform a Presentation About Pytest Fixtures', 1, 1,
+     '2022-02-12', '2022-02-17'),
+    ('Create a Flask Project', '2022-02-17', '2022-03-08', 2, 'Put the application on the web', 3, 1, '2022-02-18',
+     '2022-02-28'),
+    ('Web Scraping + Data Analysis', '2022-03-07', '2022-04-07', 3, 'Perform a Presentation About Web Scraping', 2, 1,
+     '2022-03-07', '2022-04-07'),
+    ('Learn SQL using SQLite3', '2022-04-14', None, None, None, None, None, None, None)
+    ]
+
+
+def test_select_all_projects_and_tasks_related(create_connection, populate_projects_and_tasks):
+    assert new_operations.select_all_projects_and_tasks_related(create_connection) == all_tasks_and_projects

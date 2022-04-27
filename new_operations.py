@@ -74,8 +74,8 @@ def create_task(conn, task):
             task_name      TEXT    NOT NULL,
             priority       INTEGER NOT NULL,
             status_id      INTEGER NOT NULL,
-            begin_date     TEXT,
-            end_date TEXT,
+            begin_date     TEXT    NOT NULL,
+            end_date       TEXT,
             project_id     INTEGER NOT NULL,
             FOREIGN KEY (
                 project_id
@@ -94,6 +94,40 @@ def create_task(conn, task):
     return cur.lastrowid
 
 
+def select_project_by_id(conn, id_selected):
+    """
+        Find a project by the project id
+    :param conn: sqlite3.Connection
+    :param id_selected: The project id
+    :return: The project selected
+    """
+    sql = f"""
+    SELECT *
+    FROM projects
+    WHERE project_id = {id_selected}"""
+    cur = conn.cursor()
+    cur.execute(sql)
+    data = cur.fetchone()
+    return data
+
+
+def select_task_by_begin_date(conn, begin_date):
+    """
+        Find a project by the project id
+    :param conn: sqlite3.Connection
+    :param begin_date: The date when the task was assigned
+    :return: The project selected
+    """
+    sql = f"""
+    SELECT *
+    FROM tasks
+    WHERE begin_date LIKE '%{begin_date}%'"""
+    cur = conn.cursor()
+    cur.execute(sql)
+    data = cur.fetchall()
+    return data
+
+
 def main():
     database = r"C:\Users\Pedro Paulo\sqlite-project\base.db"
 
@@ -101,16 +135,27 @@ def main():
     conn = create_connection(database)
     with conn:
         # create a new project
-        project = ('Cool App with SQLite & Python', '2015-01-01', '2015-01-30')
+        project = [("MongoDB and Fixtures", "2022-02-07", "2022-02-17"),
+                   ("Web Scraping + Data Analysis", "2022-03-07", "2022-04-07")]
         project_id = create_project(conn, project)
 
         # tasks
-        task_1 = ('Analyze the requirements of the app', 1, 1, project_id, '2015-01-01', '2015-01-02')
-        task_2 = ('Confirm with user about the top requirements', 1, 1, project_id, '2015-01-03', '2015-01-05')
+        task_1 = ('Perform a Presentation About Pytest Fixtures', 1, 1, 1, '2022-02-12', "2022-02-17")
+        task_2 = ('Perform a Presentation About Web Scraping', 2, 1, 3, '2022-03-07', "2022-04-07")
 
         # create tasks
         create_task(conn, task_1)
         create_task(conn, task_2)
+
+        # select project by id
+        project_selected_01 = select_project_by_id(conn, 1)
+        print(project_selected_01)
+        project_selected_02 = select_project_by_id(conn, 2)
+        print(project_selected_02)
+
+        # select task by begin date
+        tasks_selected = select_task_by_begin_date(conn, '2022-02-12')
+        print(tasks_selected)
 
     conn.close()
 

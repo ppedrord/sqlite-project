@@ -12,6 +12,7 @@ U - UPDATE
 D - DELETE
 
 """
+import pprint
 import sqlite3
 from sqlite3 import Error
 
@@ -42,13 +43,13 @@ def create_project(conn: sqlite3.Connection, project):
         CREATE TABLE IF NOT EXISTS projects (
             project_id   INTEGER PRIMARY KEY,
             project_name TEXT    NOT NULL,
-            begin_date   TEXT    NOT NULL,
-            end_date     TEXT
+            project_begin_date   TEXT    NOT NULL,
+            project_end_date     TEXT
         )
     """
     cur = conn.cursor()
     cur.execute(table_project)
-    sql = ''' INSERT INTO projects(project_name,begin_date,end_date)
+    sql = ''' INSERT INTO projects(project_name, project_begin_date, project_end_date)
               VALUES(?,?,?) '''
     cur = conn.cursor()
     if len(project) == 1:
@@ -86,7 +87,7 @@ def create_task(conn, task):
             """
     cur = conn.cursor()
     cur.execute(table_task)
-    sql = ''' INSERT INTO tasks(task_name,priority,status_id,project_id,begin_date,end_date)
+    sql = ''' INSERT INTO tasks(task_name, priority, status_id, project_id, begin_date, end_date)
               VALUES(?,?,?,?,?,?) '''
     cur = conn.cursor()
     cur.execute(sql, task)
@@ -128,6 +129,60 @@ def select_task_by_begin_date(conn, begin_date):
     return data
 
 
+def select_project_and_its_tasks(conn, project_id):
+    """
+        Find a project and its tasks by the project id
+    :param conn: sqlite3.Connection
+    :param project_id: The id of the specific project
+    :return: The project selected and its tasks
+    """
+    sql = f"""
+    SELECT  task_id,
+            task_name,
+            priority,
+            status_id,
+            begin_date,
+            end_date,
+            
+            project_name, 
+            project_begin_date, 
+            project_end_date
+            
+    FROM tasks
+    INNER JOIN projects ON projects.project_id = tasks.project_id
+    WHERE projects.project_id = {project_id}"""
+    cur = conn.cursor()
+    cur.execute(sql)
+    data = cur.fetchall()
+    return data
+
+
+def select_projects_that_have_tasks(conn):
+    """
+        Find a project and its tasks by the project id
+    :param conn: sqlite3.Connection
+    :return: The projects that have tasks
+    """
+    sql = """
+    SELECT project_name,
+           project_begin_date,
+           project_end_date,
+           task_id,
+           task_name,
+           priority,
+           status_id,
+           begin_date,
+           end_date
+
+    FROM projects
+    LEFT JOIN tasks ON tasks.project_id = projects.project_id
+    WHERE tasks.project_id IS NOT NULL"""
+    cur = conn.cursor()
+    cur.execute(sql)
+    data = cur.fetchall()
+    return data
+
+
 def main():
     database = r"C:\Users\Pedro Paulo\sqlite-project\base.db"
 
@@ -135,27 +190,43 @@ def main():
     conn = create_connection(database)
     with conn:
         # create a new project
-        project = [("MongoDB and Fixtures", "2022-02-07", "2022-02-17"),
-                   ("Web Scraping + Data Analysis", "2022-03-07", "2022-04-07")]
-        project_id = create_project(conn, project)
+        projects = [("MongoDB and Fixtures", "2022-02-07", "2022-02-17"),
+                    ('Create a Flask Project', '2022-02-17', '2022-03-08'),
+                    ("Web Scraping + Data Analysis", "2022-03-07", "2022-04-07"),
+                    ("Learn SQL using SQLite3", "2022-04-14", None)]
+        project_id = create_project(conn, projects)
 
         # tasks
         task_1 = ('Perform a Presentation About Pytest Fixtures', 1, 1, 1, '2022-02-12', "2022-02-17")
-        task_2 = ('Perform a Presentation About Web Scraping', 2, 1, 3, '2022-03-07', "2022-04-07")
+        task_2 = ('Put the application on the web', 3, 1, 2, '2022-02-18', "2022-02-28")
+        task_3 = ('Perform a Presentation About Web Scraping', 2, 1, 3, '2022-03-07', "2022-04-07")
 
         # create tasks
         create_task(conn, task_1)
         create_task(conn, task_2)
+        create_task(conn, task_3)
 
         # select project by id
         project_selected_01 = select_project_by_id(conn, 1)
-        print(project_selected_01)
-        project_selected_02 = select_project_by_id(conn, 2)
-        print(project_selected_02)
+        print("project_selected_01:", project_selected_01)
+        project_selected_02 = select_project_by_id(conn, 3)
+        print("project_selected_02:", project_selected_02, "\n")
 
         # select task by begin date
         tasks_selected = select_task_by_begin_date(conn, '2022-02-12')
-        print(tasks_selected)
+        print("tasks_selected:", tasks_selected, "\n")
+
+        # select project and its tasks by the id of the project
+        project_and_tasks_01 = select_project_and_its_tasks(conn, 1)
+        print("project_and_tasks_01:", project_and_tasks_01)
+        project_and_tasks_02 = select_project_and_its_tasks(conn, 2)
+        print("project_and_tasks_02:", project_and_tasks_02)
+        project_and_tasks_03 = select_project_and_its_tasks(conn, 3)
+        print("project_and_tasks_03:", project_and_tasks_03, "\n")
+
+        # select project and its tasks by the id of the project
+        projects_with_tasks_01 = select_projects_that_have_tasks(conn)
+        print("projects_with_tasks_01:", projects_with_tasks_01)
 
     conn.close()
 

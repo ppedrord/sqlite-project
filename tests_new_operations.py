@@ -16,16 +16,16 @@ DROP_TABLE_SQL = f"DROP TABLE {TABLE_PARAMETER};"
 GET_TABLES_SQL = "SELECT name FROM sqlite_schema WHERE type='table';"
 
 
-def get_tables(con):
-    cur = con.cursor()
+def get_tables(conn):
+    cur = conn.cursor()
     cur.execute(GET_TABLES_SQL)
     tables = cur.fetchall()
     cur.close()
     return tables
 
 
-def delete_tables(con, tables):
-    cur = con.cursor()
+def delete_tables(conn, tables):
+    cur = conn.cursor()
     for table, in tables:
         sql = DROP_TABLE_SQL.replace(TABLE_PARAMETER, table)
         if table != 'sqlite_sequence':
@@ -45,6 +45,8 @@ def create_connection():
     except Error as e:
         print(e)
 
+    tables = get_tables(conn)
+    delete_tables(conn, tables)
     yield conn
     tables = get_tables(conn)
     delete_tables(conn, tables)
@@ -54,8 +56,7 @@ def create_connection():
 def populate_project_table(create_connection):
     projects = [("MongoDB and Fixtures", "2022-02-07", "2022-02-17")]
     project_id = new_operations.create_project(create_connection, projects)
-    print(project_id)
-    return project_id
+    yield project_id
 
 
 @pytest.fixture
@@ -71,12 +72,28 @@ def populate_projects_and_tasks(create_connection):
     new_operations.create_task(create_connection, task_01)
     task_02 = ('Perform a Presentation About Web Scraping', 2, 1, 3, '2022-03-07', "2022-04-07")
     new_operations.create_task(create_connection, task_02)
-    return True
+    yield True
 
 
-project_0 = [("MongoDB and Fixtures", "2022-02-07", "2022-02-17")]
-project_1 = [('Create a Flask Project', '2022-02-17', '2022-03-08'),
-             ("Web Scraping + Data Analysis", "2022-03-07", "2022-04-07")]
+project_0 = [
+    (
+        "MongoDB and Fixtures",
+        "2022-02-07",
+        "2022-02-17"
+        )
+    ]
+project_1 = [
+    (
+        'Create a Flask Project',
+        '2022-02-17',
+        '2022-03-08'
+        ),
+    (
+        "Web Scraping + Data Analysis",
+        "2022-03-07",
+        "2022-04-07"
+        )
+    ]
 
 
 def test_create_project(create_connection):
@@ -84,8 +101,19 @@ def test_create_project(create_connection):
     assert new_operations.create_project(create_connection, project_1) == 3
 
 
-task_0 = ('Perform a Presentation About Pytest Fixtures', 1, 1, 1, '2022-02-12', "2022-02-17")
-task_1 = ('Perform a Presentation About Web Scraping', 2, 1, 2, '2022-03-07', "2022-04-07")
+task_0 = ('Perform a Presentation About Pytest Fixtures',
+          1,
+          1,
+          1,
+          '2022-02-12',
+          "2022-02-17")
+
+task_1 = ('Perform a Presentation About Web Scraping',
+          2,
+          1,
+          2,
+          '2022-03-07',
+          "2022-04-07")
 
 
 def test_create_task(create_connection, populate_project_table):
@@ -93,22 +121,46 @@ def test_create_task(create_connection, populate_project_table):
     assert new_operations.create_task(create_connection, task_1) == 2
 
 
-project_to_find_00 = (1, "MongoDB and Fixtures", "2022-02-07", "2022-02-17")
+project_to_find_00 = (1,
+                      "MongoDB and Fixtures",
+                      "2022-02-07",
+                      "2022-02-17")
 
 
 def test_select_project_by_id(create_connection, populate_project_table):
     assert new_operations.select_project_by_id(create_connection, 1) == project_to_find_00
 
 
-task_selected_0 = [(1, 'Perform a Presentation About Pytest Fixtures', 1, 1, '2022-02-12', '2022-02-17', 1)]
+task_selected_0 = [
+    (
+        1,
+        'Perform a Presentation About Pytest Fixtures',
+        1,
+        1,
+        '2022-02-12',
+        '2022-02-17',
+        1
+        )
+    ]
 
 
 def test_select_task_by_begin_date(create_connection, populate_projects_and_tasks):
     assert new_operations.select_task_by_begin_date(create_connection, '2022-02-12') == task_selected_0
 
 
-project_and_tasks_1 = [(1, 'Perform a Presentation About Pytest Fixtures', 1, 1, '2022-02-12', '2022-02-17',
-                        'MongoDB and Fixtures', '2022-02-07', '2022-02-17')]
+project_and_tasks_1 = [
+    (
+        1,
+        'Perform a Presentation About Pytest Fixtures',
+        1,
+        1,
+        '2022-02-12',
+        '2022-02-17',
+        'MongoDB and Fixtures',
+        '2022-02-07',
+        '2022-02-17'
+        )
+    ]
 
 
 def test_select_project_and_its_tasks(create_connection, populate_projects_and_tasks):
@@ -116,12 +168,39 @@ def test_select_project_and_its_tasks(create_connection, populate_projects_and_t
 
 
 projects_with_tasks_01 = [
-    ('MongoDB and Fixtures', '2022-02-07', '2022-02-17', 1, 'Perform a Presentation About Pytest Fixtures', 1, 1,
-     '2022-02-12', '2022-02-17'),
-    ('Create a Flask Project', '2022-02-17', '2022-03-08', 2, 'Put the application on the web', 3, 1, '2022-02-18',
-     '2022-02-28'),
-    ('Web Scraping + Data Analysis', '2022-03-07', '2022-04-07', 3, 'Perform a Presentation About Web Scraping', 2, 1,
-     '2022-03-07', '2022-04-07')
+    (
+        'MongoDB and Fixtures',
+        '2022-02-07',
+        '2022-02-17',
+        1,
+        'Perform a Presentation About Pytest Fixtures',
+        1,
+        1,
+        '2022-02-12',
+        '2022-02-17'
+        ),
+    (
+        'Create a Flask Project',
+        '2022-02-17',
+        '2022-03-08',
+        2,
+        'Put the application on the web',
+        3,
+        1,
+        '2022-02-18',
+        '2022-02-28'
+        ),
+    (
+        'Web Scraping + Data Analysis',
+        '2022-03-07',
+        '2022-04-07',
+        3,
+        'Perform a Presentation About Web Scraping',
+        2,
+        1,
+        '2022-03-07',
+        '2022-04-07'
+        )
     ]
 
 
@@ -130,13 +209,48 @@ def test_projects_that_have_tasks(create_connection, populate_projects_and_tasks
 
 
 all_tasks_and_projects = [
-    ('MongoDB and Fixtures', '2022-02-07', '2022-02-17', 1, 'Perform a Presentation About Pytest Fixtures', 1, 1,
-     '2022-02-12', '2022-02-17'),
-    ('Create a Flask Project', '2022-02-17', '2022-03-08', 2, 'Put the application on the web', 3, 1, '2022-02-18',
-     '2022-02-28'),
-    ('Web Scraping + Data Analysis', '2022-03-07', '2022-04-07', 3, 'Perform a Presentation About Web Scraping', 2, 1,
-     '2022-03-07', '2022-04-07'),
-    ('Learn SQL using SQLite3', '2022-04-14', None, None, None, None, None, None, None)
+    (
+        'MongoDB and Fixtures',
+        '2022-02-07', '2022-02-17',
+        1, 'Perform a Presentation About Pytest Fixtures',
+        1,
+        1,
+        '2022-02-12',
+        '2022-02-17'
+        ),
+    (
+        'Create a Flask Project',
+        '2022-02-17',
+        '2022-03-08',
+        2,
+        'Put the application on the web',
+        3,
+        1,
+        '2022-02-18',
+        '2022-02-28'
+        ),
+    (
+        'Web Scraping + Data Analysis',
+        '2022-03-07',
+        '2022-04-07',
+        3,
+        'Perform a Presentation About Web Scraping',
+        2,
+        1,
+        '2022-03-07',
+        '2022-04-07'
+        ),
+    (
+        'Learn SQL using SQLite3',
+        '2022-04-14',
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None
+        )
     ]
 
 
@@ -147,3 +261,6 @@ def test_select_all_projects_and_tasks_related(create_connection, populate_proje
 def test_delete_projects_that_do_not_have_tasks(create_connection, populate_projects_and_tasks):
     assert new_operations.delete_projects_that_do_not_have_tasks(create_connection) == 1
 
+
+def test_update_one_project_end_date(create_connection, populate_projects_and_tasks):
+    assert new_operations.update_one_project_end_date(create_connection, 4, "2022-04-2022") == 0

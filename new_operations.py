@@ -238,8 +238,9 @@ def delete_projects_that_do_not_have_tasks(conn):
     find_rows_before_tuple = cur.execute(sql_0)
     for i in find_rows_before_tuple:
         find_rows_before = i[0]
+
     sql_1 = """
-        SELECT 
+        SELECT projects.project_id,
                project_name,
                project_begin_date,
                project_end_date,
@@ -254,13 +255,15 @@ def delete_projects_that_do_not_have_tasks(conn):
         LEFT JOIN tasks ON tasks.project_id = projects.project_id
         WHERE tasks.project_id IS NULL"""
     cur.execute(sql_1)
-    data = cur.fetchone()
-    print(data)
-    sql_2 = f"""
-        DELETE FROM projects
-        WHERE project_name LIKE '%{data[0]}%' 
-    """
-    cur.execute(sql_2)
+    data = cur.fetchall()
+
+    for id_number in data:
+        sql_2 = f"""
+            DELETE FROM projects
+            WHERE project_id = {id_number[0]} 
+        """
+        cur.execute(sql_2)
+
     sql_3 = """
             SELECT count(*)
             FROM projects
@@ -269,10 +272,47 @@ def delete_projects_that_do_not_have_tasks(conn):
     for i in find_rows_after_tuple:
         find_rows_after = i[0]
 
-    if find_rows_before > find_rows_after:
-        print(find_rows_before, find_rows_after)
-
     return find_rows_before - find_rows_after
+
+
+def update_one_project_end_date(conn, project_id, end_date):
+    """
+        A method to add an end date to one project
+    :param conn: sqlite3.Connection
+    :param project_id: The id of the project
+    :param end_date: The end date of the project specified
+    :return: 0 if the operation was done correctly and -1 if it wasn't
+    """
+    sql_0 = f"""
+        SELECT *
+        FROM projects
+        WHERE project_id = {project_id}"""
+    cur = conn.cursor()
+    cur.execute(sql_0)
+    data = cur.fetchone()
+    date_before = data[3]
+
+    sql_1 = f"""
+    UPDATE projects
+    SET project_end_date = '{end_date}'
+    WHERE project_id = '{project_id}'
+    """
+    cur = conn.cursor()
+    cur.execute(sql_1)
+
+    sql_2 = f"""
+            SELECT *
+            FROM projects
+            WHERE project_id = {project_id}"""
+    cur = conn.cursor()
+    cur.execute(sql_2)
+    data = cur.fetchone()
+    date_after = data[3]
+
+    if date_after == end_date:
+        return 0
+    else:
+        return -1
 
 
 def main():
@@ -324,8 +364,13 @@ def main():
         all_projects_and_tasks = select_all_projects_and_tasks_related(conn)
         print("all_projects_and_tasks:", all_projects_and_tasks, "\n")
 
+        # update the end date of a project
+        update_project = update_one_project_end_date(conn, 4, "2022-04-2022")
+        print("update_project:", update_project, "\n")
+
         # delete the project that don't have tasks related
         project_deleted = delete_projects_that_do_not_have_tasks(conn)
+        print("project_deleted:", project_deleted)
 
     conn.close()
 
